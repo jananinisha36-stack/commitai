@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CommitAI - Commitment Indicator</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    max-width: 600px;
+    margin: 40px auto;
+    padding: 20px;
+  }
+  h1 { color: #2c3e50; }
+  p.sub { color: #555; }
+  textarea {
+    width: 100%;
+    height: 80px;
+    padding: 10px;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+  button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background: #2c3e50;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  #result {
+    margin-top: 20px;
+    padding: 15px;
+    font-weight: bold;
+    border-radius: 4px;
+    display: none;
+  }
+  .yes { background: #d4edda; color: #155724; }
+</style>
+</head>
+<body>
+
+  <h1>CommitAI - Commitment Indicator</h1>
+  <p class="sub">Type a message. If it contains a commitment, it will be flagged. If not, nothing will show.</p>
+
+  <textarea id="messageInput" placeholder="Eg: I will submit the report tomorrow"></textarea>
+  <br>
+  <button onclick="checkCommitment()">Check Message</button>
+
+  <div id="result"></div>
+
+  <script>
+    const patterns = [
+      /\bi will\b/i,
+      /\bi'll\b/i,
+      /\bi'm going to\b/i,
+      /\bi am going to\b/i,
+      /\bi promise\b/i,
+      /\bi need to\b/i,
+      /\bi have to\b/i,
+      /\bi shall\b/i,
+      /\bi plan to\b/i,
+      /\bi guarantee\b/i,
+      /\bwithout fail\b/i,
+      /\bfor sure\b/i
+    ];
+
+    function checkCommitment() {
+      const message = document.getElementById("messageInput").value.trim();
+      const resultDiv = document.getElementById("result");
+
+      let isCommitment = false;
+      for (let pattern of patterns) {
+        if (pattern.test(message)) {
+          isCommitment = true;
+          break;
+        }
+      }
+
+      if (isCommitment) {
+        resultDiv.style.display = "block";
+        resultDiv.className = "yes";
+        resultDiv.innerText = "✅ Commitment detected";
+      } else {
+        resultDiv.style.display = "none";
+      }
+    }
+  </script>
+
+</body>
+</html>
