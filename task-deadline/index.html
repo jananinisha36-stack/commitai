@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CommitAI - Task & Deadline Extractor</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    max-width: 600px;
+    margin: 40px auto;
+    padding: 20px;
+  }
+  h1 { color: #2c3e50; }
+  p.sub { color: #555; }
+  textarea {
+    width: 100%;
+    height: 80px;
+    padding: 10px;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+  button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background: #2c3e50;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  #result {
+    margin-top: 20px;
+    padding: 15px;
+    border-radius: 4px;
+    display: none;
+    background: #d4edda;
+    color: #155724;
+  }
+  .label { font-weight: bold; }
+</style>
+</head>
+<body>
+
+  <h1>CommitAI - Task & Deadline Extractor</h1>
+  <p class="sub">Type a commitment message to extract the task and deadline.</p>
+
+  <textarea id="messageInput" placeholder="Eg: I will submit the report tomorrow"></textarea>
+  <br>
+  <button onclick="extractTaskDeadline()">Extract</button>
+
+  <div id="result"></div>
+
+  <script>
+    const deadlineWords = [
+      "today", "tomorrow", "tonight",
+      "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+      "next week", "next month", "this week", "this evening", "this morning",
+      "by tomorrow", "by today", "by monday", "by friday",
+      "eod", "asap"
+    ];
+
+    function extractTaskDeadline() {
+      let message = document.getElementById("messageInput").value.trim();
+      const resultDiv = document.getElementById("result");
+
+      if (!message) {
+        resultDiv.style.display = "none";
+        return;
+      }
+
+      let messageLower = message.toLowerCase();
+      let foundDeadline = "Not specified";
+      let taskText = message;
+
+      for (let word of deadlineWords) {
+        if (messageLower.includes(word)) {
+          foundDeadline = word;
+          let regex = new RegExp(word, "i");
+          taskText = taskText.replace(regex, "").trim();
+          break;
+        }
+      }
+
+      const commitmentPhrases = [
+        "i will", "i'll", "i promise", "i need to", "i have to",
+        "i shall", "i plan to", "i'm going to", "i am going to"
+      ];
+      for (let phrase of commitmentPhrases) {
+        let regex = new RegExp(phrase, "i");
+        taskText = taskText.replace(regex, "").trim();
+      }
+
+      taskText = taskText.replace(/\s+/g, " ").replace(/^[,.\s]+|[,.\s]+$/g, "");
+
+      resultDiv.style.display = "block";
+      resultDiv.innerHTML = 
+        "<span class='label'>Task:</span> " + taskText + "<br>" +
+        "<span class='label'>Deadline:</span> " + foundDeadline;
+    }
+  </script>
+
+</body>
+</html>
