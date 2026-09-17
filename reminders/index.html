@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CommitAI - Reminder & Notification</title>
+<style>
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    max-width: 700px;
+    margin: 40px auto;
+    padding: 20px;
+  }
+  h1 { color: #2c3e50; }
+  p.sub { color: #555; }
+  .form-group {
+    margin-bottom: 10px;
+  }
+  input {
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    box-sizing: border-box;
+    margin-top: 5px;
+  }
+  button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background: #2c3e50;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+  table {
+    width: 100%;
+    margin-top: 30px;
+    border-collapse: collapse;
+    background: white;
+  }
+  th, td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+  }
+  th {
+    background: #2c3e50;
+    color: white;
+  }
+  .status {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: bold;
+    color: white;
+  }
+  .pending { background: #f39c12; }
+  .completed { background: #27ae60; }
+  .overdue { background: #e74c3c; }
+
+  .btn-small {
+    padding: 4px 8px;
+    font-size: 12px;
+    margin-right: 5px;
+    border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+
+  <h1>CommitAI - Reminder & Notification</h1>
+  <p class="sub">Add a task with its deadline to create a reminder.</p>
+
+  <div class="form-group">
+    <label>Task</label>
+    <input type="text" id="taskInput" placeholder="Eg: Submit report">
+  </div>
+
+  <div class="form-group">
+    <label>Deadline (date)</label>
+    <input type="date" id="deadlineInput">
+  </div>
+
+  <button onclick="addReminder()">Add Reminder</button>
+
+  <table id="reminderTable">
+    <thead>
+      <tr>
+        <th>Task</th>
+        <th>Deadline</th>
+        <th>Status</th>
+        <th>Action</th>
+      </tr>
+    </thead>
+    <tbody id="reminderBody">
+      <!-- Reminders will appear here -->
+    </tbody>
+  </table>
+
+  <script>
+    let reminders = [];
+
+    function addReminder() {
+      const task = document.getElementById("taskInput").value.trim();
+      const deadline = document.getElementById("deadlineInput").value;
+
+      if (!task || !deadline) {
+        alert("Please enter both task and deadline");
+        return;
+      }
+
+      reminders.push({
+        task: task,
+        deadline: deadline,
+        status: "pending"
+      });
+
+      document.getElementById("taskInput").value = "";
+      document.getElementById("deadlineInput").value = "";
+
+      renderReminders();
+    }
+
+    function markCompleted(index) {
+      reminders[index].status = "completed";
+      renderReminders();
+    }
+
+    function deleteReminder(index) {
+      reminders.splice(index, 1);
+      renderReminders();
+    }
+
+    function getStatus(reminder) {
+      if (reminder.status === "completed") return "completed";
+
+      const today = new Date();
+      today.setHours(0,0,0,0);
+      const deadlineDate = new Date(reminder.deadline);
+
+      if (deadlineDate < today) {
+        return "overdue";
+      }
+      return "pending";
+    }
+
+    function renderReminders() {
+      const tbody = document.getElementById("reminderBody");
+      tbody.innerHTML = "";
+
+      reminders.forEach((reminder, index) => {
+        const status = getStatus(reminder);
+        const row = document.createElement("tr");
+
+        row.innerHTML = `
+          <td>${reminder.task}</td>
+          <td>${reminder.deadline}</td>
+          <td><span class="status ${status}">${status.toUpperCase()}</span></td>
+          <td>
+            ${status !== "completed" ? `<button class="btn-small" onclick="markCompleted(${index})">Mark Done</button>` : ""}
+            <button class="btn-small" onclick="deleteReminder(${index})">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+  </script>
+
+</body>
+</html>
