@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>CommitAI - Dashboard</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    max-width: 900px;
+    margin: 40px auto;
+    padding: 20px;
+  }
+  h1 { color: #2c3e50; }
+  p.sub { color: #555; }
+
+  .card {
+    background: white;
+    padding: 20px;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+    margin-bottom: 25px;
+  }
+
+  textarea {
+    width: 100%;
+    height: 70px;
+    padding: 10px;
+    font-size: 16px;
+    box-sizing: border-box;
+  }
+
+  button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    background: #2c3e50;
+    color: white;
+    border: none;
+    cursor: pointer;
+    border-radius: 4px;
+  }
+
+  .stats {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 25px;
+  }
+  .stat-box {
+    flex: 1;
+    background: white;
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  }
+  .stat-box h2 { margin: 0; font-size: 28px; }
+  .stat-box p { margin: 5px 0 0; color: #777; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+  }
+  th, td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: left;
+  }
+  th {
+    background: #2c3e50;
+    color: white;
+  }
+
+  .status {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: bold;
+    color: white;
+  }
+  .pending { background: #f39c12; }
+  .completed { background: #27ae60; }
+  .overdue { background: #e74c3c; }
+  .not-commitment { background: #95a5a6; }
+
+  .btn-small {
+    padding: 4px 8px;
+    font-size: 12px;
+    margin-right: 5px;
+    border-radius: 3px;
+  }
+</style>
+</head>
+<body>
+
+  <h1>CommitAI Dashboard</h1>
+  <p class="sub">Type a message below. The system will check for a commitment and add it to your tasks.</p>
+
+  <div class="card">
+    <textarea id="messageInput" placeholder="Eg: I will submit the report tomorrow"></textarea>
+    <br>
+    <button onclick="processMessage()">Submit Message</button>
+  </div>
+
+  <div class="stats">
+    <div class="stat-box">
+      <h2 id="pendingCount">0</h2>
+      <p>Pending</p>
+    </div>
+    <div class="stat-box">
+      <h2 id="completedCount">0</h2>
+      <p>Completed</p>
+    </div>
+    <div class="stat-box">
+      <h2 id="overdueCount">0</h2>
+      <p>Overdue</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <table>
+      <thead>
+        <tr>
+          <th>Task</th>
+          <th>Deadline</th>
+          <th>Status</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="taskBody">
+        <!-- Tasks appear here -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    let tasks = [];
+
+    // ---- Member 1 logic: Commitment detection ----
+    const commitmentPatterns = [
+      /\bi will\b/i, /\bi'll\b/i, /\bi'm going to\b/i, /\bi am going to\b/i,
+      /\bi promise\b/i, /\bi need to\b/i, /\bi have to\b/i,
+      /\bi shall\b/i, /\bi plan to\b/i
+    ];
+
+    function isCommitment(message) {
+      return commitmentPatterns.some(p => p.test(message));
+    }
+
+    // ---- Member 2 logic: Task & Deadline extraction ----
+    const deadlineWords = [
+      "today", "tomorrow", "tonight",
+      "monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday",
+      "next week", "next month", "this week", "eod", "asap"
+    ];
+
+    function extractTaskDeadline(message) {
+      let messageLower = message.toLowerCase();
+      let foundDeadline = "Not specified";
+      let taskText = message;
+
+      for (let word of deadlineWords) {
+        if (messageLower.includes(word)) {
+          foundDeadline = word;
+          taskText = taskText.replace(new RegExp(word, "i"), "").trim();
+          break;
+        }
+      }
+
+      const commitmentPhrases = [
+        "i will", "i'll", "i promise", "i need to", "i have to",
+        "i shall", "i plan to", "i'm going to", "i am going to"
+      ];
+      for (let phrase of commitmentPhrases) {
+        taskText = taskText.replace(new RegExp(phrase, "i"), "").trim();
+      }
+      taskText = taskText.replace(/\s+/g, " ").replace(/^[,.\s]+|[,.\s]+$/g, "");
+
+      return { task: taskText, deadline: foundDeadline };
+    }
+
+    // ---- Main flow ----
+    function processMessage() {
+      const message = document.getElementById("messageInput").value.trim();
+      if (!message) return;
+
+      if (isCommitment(message)) {
+        const { task, deadline } = extractTaskDeadline(message);
+        tasks.push({ task: task, deadline: deadline, status: "pending" });
+      } else {
+        alert("No commitment detected in this message.");
+      }
+
+      document.getElementById("messageInput").value = "";
+      renderTasks();
+    }
+
+    function markCompleted(index) {
+      tasks[index].status = "completed";
+      renderTasks();
+    }
+
+    function deleteTask(index) {
+      tasks.splice(index, 1);
+      renderTasks();
+    }
+
+    function getStatus(t) {
+      if (t.status === "completed") return "completed";
+      // If deadline looks like "not specified", keep as pending
+      if (t.deadline.toLowerCase().includes("not specified")) return "pending";
+      return "pending"; // Basic version: overdue logic can be improved with real dates
+    }
+
+    function renderTasks() {
+      const tbody = document.getElementById("taskBody");
+      tbody.innerHTML = "";
+
+      let pending = 0, completed = 0, overdue = 0;
+
+      tasks.forEach((t, index) => {
+        const status = getStatus(t);
+        if (status === "pending") pending++;
+        if (status === "completed") completed++;
+        if (status === "overdue") overdue++;
+
+        const row = document.createElement("tr");
+        row.innerHTML = `
+          <td>${t.task}</td>
+          <td>${t.deadline}</td>
+          <td><span class="status ${status}">${status.toUpperCase()}</span></td>
+          <td>
+            ${status !== "completed" ? `<button class="btn-small" onclick="markCompleted(${index})">Mark Done</button>` : ""}
+            <button class="btn-small" onclick="deleteTask(${index})">Delete</button>
+          </td>
+        `;
+        tbody.appendChild(row);
+      });
+
+      document.getElementById("pendingCount").innerText = pending;
+      document.getElementById("completedCount").innerText = completed;
+      document.getElementById("overdueCount").innerText = overdue;
+    }
+  </script>
+
+</body>
+</html>
